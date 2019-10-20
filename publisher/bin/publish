@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup' # Set up gems listed in the Gemfile.
+
+require 'google/cloud/pubsub'
+
+require 'logger'
+
+module MyLogger
+  LOGGER = Logger.new $stderr, level: Logger::WARN
+  def logger
+    LOGGER
+  end
+end
+
+# Define a gRPC module-level logger method before grpc/logconfig.rb loads.
+module GRPC
+  extend MyLogger
+end
+
+pubsub = Google::Cloud::PubSub.new(
+  project_id: ENV.fetch('GOOGLE_CLOUD_PROJECT_ID')
+)
+
+topic_name = ENV.fetch 'GOOGLE_CLOUD_PUBSUB_TOPIC'
+my_topic = pubsub.topic(topic_name) || pubsub.new_topic(topic_name)
+
+msg = my_topic.publish 'new-message'

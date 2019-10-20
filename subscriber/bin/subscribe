@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup' # Set up gems listed in the Gemfile.
+
+require 'google/cloud/pubsub'
+
+require 'logger'
+
+require 'byebug'
+
+module MyLogger
+  LOGGER = Logger.new $stderr, level: Logger::WARN
+  def logger
+    LOGGER
+  end
+end
+
+# Define a gRPC module-level logger method before grpc/logconfig.rb loads.
+module GRPC
+  extend MyLogger
+end
+
+pubsub = Google::Cloud::PubSub.new(
+  project_id: ENV.fetch('GOOGLE_CLOUD_PROJECT_ID')
+)
+
+topic_name = ENV.fetch 'GOOGLE_CLOUD_PUBSUB_TOPIC'
+
+my_topic = pubsub.topic(topic_name) || pubsub.new_topic(topic_name)
+
+subscription_name = 'example-topic-subscription'
+# Retrieve a subscription
+sub = my_topic.subscription(subscription_name) || my_topic.subscribe(subscription_name)
+
+# Create a subscriber to listen for available messages
+subscriber = sub.listen do |received_message|
+  puts "= Received message: #{received_message.inspect}"
+  # process message
+  received_message.acknowledge!
+end
+
+# Start background threads that will call the block passed to listen.
+subscriber.start
+
+# Fade into a deep sleep as worker will run indefinitely
+sleep
+
+# Shut down the subscriber when ready to stop receiving messages.
+# subscriber.stop.wait!

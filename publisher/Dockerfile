@@ -1,0 +1,28 @@
+FROM ruby:2.6.5-alpine3.10 AS runtime
+
+WORKDIR /usr/src
+
+ENV HOME=/usr/src PATH=/usr/src/bin:$PATH
+
+RUN apk add --no-cache ca-certificates less libc6-compat openssl tzdata
+
+FROM runtime AS development
+
+RUN apk add --no-cache build-base git
+
+RUN export DOCKERIZE_VERSION=0.6.1 \
+ && wget https://github.com/jwilder/dockerize/releases/download/v0.6.1/dockerize-linux-amd64-v${DOCKERIZE_VERSION}.tar.gz \
+ && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-v${DOCKERIZE_VERSION}.tar.gz \
+ && rm dockerize-linux-amd64-v${DOCKERIZE_VERSION}.tar.gz
+
+ADD Gemfile* /usr/src/
+
+RUN CFLAGS="-Wno-cast-function-type" \
+  BUNDLE_FORCE_RUBY_PLATFORM=1 \
+  bundle install --jobs=4 --retry=3
+
+ARG DEVELOPER_UID="1000"
+
+RUN adduser -u $DEVELOPER_UID -h /usr/src -D -H -g "Developer User" you
+
+# USER you
