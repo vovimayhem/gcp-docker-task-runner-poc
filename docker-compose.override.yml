@@ -1,0 +1,53 @@
+version: "3.7"
+
+services:
+  publisher: &app
+    build: &app_build
+      context: ./publisher
+      dockerfile: Dockerfile
+      target: development
+      args:
+        - DEVELOPER_UID=${UID:-1000}
+    # entrypoint: /usr/src/bin/dev-entrypoint.sh
+    volumes:
+      # Mount the app code into the app containers at the "/usr/src" folder:
+      - ./publisher:/usr/src
+
+    # Keep the stdin open, so we can attach to our app container's process
+    # and do things such as byebug, etc:
+    stdin_open: true
+
+    # Enable sending signals (CTRL+C, CTRL+P + CTRL+Q) into the container:
+    tty: true
+
+    # Link to our postgres and redis containers, so they can be visible from our
+    # app containers:
+    depends_on:
+      - pubsub
+
+    # The command we want to execute by default when running the container
+    command: publish
+
+    # Specify environment variables available for our app containers. We'll
+    # leave a YML anchor in case we need to override or add more variables if
+    # needed on each app container:
+    environment: &app_env
+      # Use the local pubsub emulator instead of Google Cloud:
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+
+      # Goocle Cloud variables:
+      GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-my-example-project-id}
+      GOOGLE_CLOUD_PUBSUB_TOPIC: example-pubsub-topic
+      GOOGLE_CLOUD_PUBSUB_SUBSCRIPTION: example-pubsub-subscription
+
+  subscriber:
+    <<: *app
+    build:
+      <<: *app_build
+      context: ./subscriber
+    volumes:
+      # Mount the app code into the app containers at the "/usr/src" folder:
+      - ./subscriber:/usr/src
+      - /var/run/docker.sock:/var/run/docker.sock
+    # The command we want to execute by default when running the container
+    command: subscribe
