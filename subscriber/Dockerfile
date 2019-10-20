@@ -17,9 +17,11 @@ RUN export DOCKERIZE_VERSION=0.6.1 \
 
 ADD Gemfile* /usr/src/
 
-RUN CFLAGS="-Wno-cast-function-type" \
-  BUNDLE_FORCE_RUBY_PLATFORM=1 \
-  bundle install --jobs=4 --retry=3
+# GRPC Won't build unless bundler is configured to compile native extensions
+# from source:
+ENV BUNDLE_FORCE_RUBY_PLATFORM=1
+
+RUN CFLAGS="-Wno-cast-function-type" bundle install --jobs=4 --retry=3
 
 ARG DEVELOPER_UID="1000"
 
