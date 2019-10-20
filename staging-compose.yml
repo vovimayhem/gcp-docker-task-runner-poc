@@ -10,6 +10,9 @@ services:
       args:
         - DEVELOPER_UID=${UID:-1000}
 
+    volumes:
+      - ./service-account-key.json:/run/secrets/service-account-key
+
     # Keep the stdin open, so we can attach to our app container's process
     # and do things such as byebug, etc:
     stdin_open: true
@@ -42,3 +45,4 @@ services:
       context: ./subscriber
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./service-account-key.json:/run/secrets/service-account-key

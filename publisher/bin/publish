@@ -19,7 +19,8 @@ module GRPC
 end
 
 pubsub = Google::Cloud::PubSub.new(
-  project_id: ENV.fetch('GOOGLE_CLOUD_PROJECT_ID')
+  project_id: ENV.fetch('GOOGLE_CLOUD_PROJECT_ID'),
+  credentials: ENV.fetch('DEMO_GOOGLE_CLOUD_KEYFILE_PATH', '/run/secrets/service-account-key')
 )
 
 topic_name = ENV.fetch 'GOOGLE_CLOUD_PUBSUB_TOPIC'
