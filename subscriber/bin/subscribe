@@ -7,6 +7,8 @@ require 'google/cloud/pubsub'
 require 'logger'
 
 require 'byebug'
+require 'docker'
+require 'securerandom'
 
 module MyLogger
   LOGGER = Logger.new $stderr, level: Logger::WARN
@@ -18,6 +20,28 @@ end
 # Define a gRPC module-level logger method before grpc/logconfig.rb loads.
 module GRPC
   extend MyLogger
+end
+
+TIMEOUT_IN_SECONDS = ENV.fetch('CONTAINER_TIMEOUT_SECONDS', '1200').freeze
+
+def do_some_work
+  container_image = Docker::Image.create fromImage: 'docker:stable'
+
+  container_opts = {
+    Binds: [ '/var/run/docker.sock:/var/run/docker.sock' ],
+    Labels: { 'com.icalialabs.demo': 'true' }
+  }
+  
+  container = Docker::Container.create container_opts.merge(
+    name: "hello-world-launcher-#{SecureRandom.uuid}",
+    Image: container_image.id,
+    Cmd: %w[docker run hello-world]
+  )
+
+  container.start!
+  container.wait(TIMEOUT_IN_SECONDS.to_i)
+rescue => e
+  debugger
 end
 
 pubsub = Google::Cloud::PubSub.new(
@@ -35,6 +59,7 @@ sub = my_topic.subscription(subscription_name) || my_topic.subscribe(subscriptio
 # Create a subscriber to listen for available messages
 subscriber = sub.listen do |received_message|
   puts "= Received message: #{received_message.inspect}"
+  do_some_work
   # process message
   received_message.acknowledge!
 end
