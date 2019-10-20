@@ -41,7 +41,7 @@ def do_some_work
   container.start!
   container.wait(TIMEOUT_IN_SECONDS.to_i)
 rescue => e
-  debugger
+  puts "ERROR: #{e.inspect}"
 end
 
 pubsub = Google::Cloud::PubSub.new(
