@@ -1,0 +1,41 @@
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "demo-subscriber"
+  namespace: "default"
+  labels:
+    app: "demo-subscriber"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "demo-subscriber"
+  template:
+    metadata:
+      labels:
+        app: "demo-subscriber"
+    spec:
+      securityContext:
+        fsGroup: 412    # Group ID of docker group on k8s nodes.
+      containers:
+        - name: "subscriber"
+          image: "gcr.io/vovi-playground-235816/gcp-docker-task-runner-poc-subscriber@sha256:bd9332ad26cef0b2d9a83a29177d4e8b02b8bcedc86116e7024cc1a9c1f0fa47"
+          envFrom:
+            - configMapRef:
+                name: "gcp-docker-task-runner-poc-config"
+          volumeMounts:
+            - name: secrets
+              readOnly: true
+              mountPath: "/etc/secrets"
+            - name: dockersock
+              mountPath: "/var/run/docker.sock"
+      volumes:
+        - name: secrets
+          secret:
+            secretName: gcp-docker-task-runner-poc-secrets
+            items:
+            - key: service-account-key.json
+              path: service-account-key
+        - name: dockersock
+          hostPath:
+            path: /var/run/docker.sock

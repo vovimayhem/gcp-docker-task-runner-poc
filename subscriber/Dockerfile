@@ -27,4 +27,24 @@ ARG DEVELOPER_UID="1000"
 
 RUN adduser -u $DEVELOPER_UID -h /usr/src -D -H -g "Developer User" you
 
-# USER you
+# ==============================================================================
+FROM development AS testing
+COPY . /usr/src
+
+# ==============================================================================
+FROM testing AS builder
+
+RUN bundle config without development:test \
+ && bundle clean \
+ && rm -rf tmp/* \
+ # Remove unneeded files (cached *.gem, *.o, *.c)
+ && rm -rf /usr/local/bundle/cache/*.gem \
+ && find /usr/local/bundle/gems/ -name "*.c" -delete \
+ && find /usr/local/bundle/gems/ -name "*.o" -delete
+
+# ==============================================================================
+FROM runtime AS release
+COPY --from=builder /usr/local/bin/dockerize /usr/local/bin/dockerize
+COPY --from=builder /usr/local/bundle /usr/local/bundle
+COPY --from=builder --chown=nobody:nobody /usr/src /usr/src
+CMD [ "subscribe" ]

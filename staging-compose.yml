@@ -1,0 +1,48 @@
+version: "3.7"
+
+services:
+  publisher: &app
+    image: gcr.io/vovi-playground-235816/gcp-docker-task-runner-poc-publisher:latest
+    build: &app_build
+      context: ./publisher
+      dockerfile: Dockerfile
+      target: release
+      args:
+        - DEVELOPER_UID=${UID:-1000}
+
+    volumes:
+      - ./service-account-key.json:/run/secrets/service-account-key
+
+    # Keep the stdin open, so we can attach to our app container's process
+    # and do things such as byebug, etc:
+    stdin_open: true
+
+    # Enable sending signals (CTRL+C, CTRL+P + CTRL+Q) into the container:
+    tty: true
+
+    # Link to our postgres and redis containers, so they can be visible from our
+    # app containers:
+    depends_on:
+      - pubsub
+
+    # Specify environment variables available for our app containers. We'll
+    # leave a YML anchor in case we need to override or add more variables if
+    # needed on each app container:
+    environment: &app_env
+      # Use the local pubsub emulator instead of Google Cloud:
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+
+      # Goocle Cloud variables:
+      GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-my-example-project-id}
+      GOOGLE_CLOUD_PUBSUB_TOPIC: example-pubsub-topic
+      GOOGLE_CLOUD_PUBSUB_SUBSCRIPTION: example-pubsub-subscription
+
+  subscriber:
+    <<: *app
+    image: gcr.io/vovi-playground-235816/gcp-docker-task-runner-poc-subscriber:latest
+    build:
+      <<: *app_build
+      context: ./subscriber
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./service-account-key.json:/run/secrets/service-account-key
