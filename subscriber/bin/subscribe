@@ -11,7 +11,7 @@ require 'docker'
 require 'securerandom'
 
 module MyLogger
-  LOGGER = Logger.new $stderr, level: Logger::WARN
+  LOGGER = Logger.new(STDOUT)
   def logger
     LOGGER
   end
@@ -20,6 +20,10 @@ end
 # Define a gRPC module-level logger method before grpc/logconfig.rb loads.
 module GRPC
   extend MyLogger
+end
+
+def logger
+  MyLogger::LOGGER
 end
 
 TIMEOUT_IN_SECONDS = ENV.fetch('CONTAINER_TIMEOUT_SECONDS', '1200').freeze
@@ -41,9 +45,11 @@ def do_some_work
   container.start!
   container.wait(TIMEOUT_IN_SECONDS.to_i)
 rescue => e
-  puts "ERROR: #{e.inspect}"
+  logger.error "ERROR: #{e.inspect}"
+  raise
 end
 
+logger.info "Connecting to PubSub..."
 pubsub = Google::Cloud::PubSub.new(
   project_id: ENV.fetch('GOOGLE_CLOUD_PROJECT_ID'),
   credentials: ENV.fetch('DEMO_GOOGLE_CLOUD_KEYFILE_PATH', '/run/secrets/service-account-key')
@@ -58,11 +64,16 @@ subscription_name = 'example-topic-subscription'
 sub = my_topic.subscription(subscription_name) || my_topic.subscribe(subscription_name)
 
 # Create a subscriber to listen for available messages
+logger.info "Start listening..."
 subscriber = sub.listen do |received_message|
-  puts "= Received message: #{received_message.inspect}"
+  logger.info "= Received message: #{received_message.inspect}"
   do_some_work
   # process message
   received_message.acknowledge!
+end
+
+subscriber.on_error do |error|
+  logger.error "Error: #{error.inspect}"
 end
 
 # Start background threads that will call the block passed to listen.
