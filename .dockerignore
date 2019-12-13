@@ -1,0 +1,14 @@
+**/.*_hist*
+
+**/.bundle
+
+**/*.env
+
+Dockerfile
+docker-compose.yml
+docker-compose.override.yml
+staging-compose.yml
+k8-deploy
+
+.git
+.gitignore

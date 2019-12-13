@@ -2,14 +2,14 @@ version: "3.7"
 
 services:
   publisher: &app
-    image: gcr.io/vovi-playground-235816/gcp-docker-task-runner-poc-publisher:latest
-    build: &app_build
-      context: ./publisher
+    image: gcr.io/vovi-playground-235816/gcp-docker-task-runner-poc:latest
+    build:
+      context: .
       dockerfile: Dockerfile
       target: release
       args:
         - DEVELOPER_UID=${UID:-1000}
-
+    command: publish
     volumes:
       - ./service-account-key.json:/run/secrets/service-account-key
 
@@ -39,10 +39,7 @@ services:
 
   subscriber:
     <<: *app
-    image: gcr.io/vovi-playground-235816/gcp-docker-task-runner-poc-subscriber:latest
-    build:
-      <<: *app_build
-      context: ./subscriber
+    command: subscribe
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./service-account-key.json:/run/secrets/service-account-key

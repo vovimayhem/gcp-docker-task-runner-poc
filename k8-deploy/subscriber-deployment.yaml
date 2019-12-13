@@ -19,7 +19,7 @@ spec:
         fsGroup: 412    # Group ID of docker group on k8s nodes.
       containers:
         - name: "subscriber"
-          image: "gcr.io/vovi-playground-235816/gcp-docker-task-runner-poc-subscriber@sha256:bd9332ad26cef0b2d9a83a29177d4e8b02b8bcedc86116e7024cc1a9c1f0fa47"
+          image: "gcr.io/vovi-playground-235816/gcp-docker-task-runner-poc@sha256:e5781789e15f2ff9d855bc0f5c594a512b1799df70ea9e664d959a3f05728477"
           envFrom:
             - configMapRef:
                 name: "gcp-docker-task-runner-poc-config"
