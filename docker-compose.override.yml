@@ -11,7 +11,7 @@ services:
     volumes:
       # Mount the app code into the app containers at the "/usr/src" folder:
       - .:/usr/src
-      - ./service-account-key.json:/run/secrets/service-account-key
+      # - ./service-account-key.json:/run/secrets/service-account-key
 
     # Keep the stdin open, so we can attach to our app container's process
     # and do things such as byebug, etc:
@@ -36,9 +36,7 @@ services:
       PUBSUB_EMULATOR_HOST: pubsub:8085
 
       # Goocle Cloud variables:
-      GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-my-example-project-id}
-      GOOGLE_CLOUD_PUBSUB_TOPIC: example-pubsub-topic
-      GOOGLE_CLOUD_PUBSUB_SUBSCRIPTION: example-pubsub-subscription
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-my-example-project-id}
 
   subscriber:
     <<: *app

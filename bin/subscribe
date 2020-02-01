@@ -50,12 +50,9 @@ rescue => e
 end
 
 logger.info "Connecting to PubSub..."
-pubsub = Google::Cloud::PubSub.new(
-  project_id: ENV.fetch('GOOGLE_CLOUD_PROJECT_ID'),
-  credentials: ENV.fetch('DEMO_GOOGLE_CLOUD_KEYFILE_PATH', '/run/secrets/service-account-key')
-)
+pubsub = Google::Cloud::PubSub.new
 
-topic_name = ENV.fetch 'GOOGLE_CLOUD_PUBSUB_TOPIC'
+topic_name = 'example-topic'
 
 my_topic = pubsub.topic(topic_name) || pubsub.new_topic(topic_name)
 
